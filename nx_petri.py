@@ -42,21 +42,22 @@ class Product():
 class Farm():
     def __init__(self, V_name):
         self.V_name = V_name
+        #accident_scale being the negative impact on a workers hp should an accident occur
         self.accident_scale = random.randint(20,40)
 
     def hard_trigger(self):
         E = B.in_edges( self.V_name )
         p_test = []
 
-
         for e in E:
-
+            #appends True when the supply Node has resources
             if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
                 p_test.append(True)
             else:
                 p_test.append(False)
 
         if len(p_test) > 0:
+            #all(p_test), we have a hard trigger
             return all(p_test)
         else:
             return False
@@ -73,20 +74,22 @@ class Farm():
                 resource = B.nodes[ e[0] ]["holdings"][0]
                 if isinstance(resource, Worker):
                     transfer["W_x"] = resource
-                    B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
-                
-            
+                    #updates the supply node, removing the retrieved worker
+                    B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]            
 
             E_out = B.out_edges( self.V_name )
             if random.randint(1, 12) <= 3:
+                #25% of accident occuring, updates hp
                 transfer["W_x"].change_hp(-self.accident_scale)
 
             for i in E_out:
 
+                #only send the worker if it has positive hp,
                 if B.nodes[ i[1] ]["color"] == "Road" and transfer["W_x"].get_hp() > 0:
                     B.nodes[ i[1] ]["holdings"].append(transfer["W_x"])
 
                 elif B.nodes[ i[1] ]["color"] == "Barn":
+                    #send food
                     B.nodes[ i[1] ]["holdings"].append(transfer["F_x"])
                 
         else:
@@ -141,11 +144,15 @@ class Diner():
                 #pops the resource from the source Node at index 0, Barn and Road both use Que
                 B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
             
+            #the workers hp is updated with the foods quality
             transfer["W_x"].eat(transfer["F_x"])
 
-
+            #E_out, a list of edges for the transition,
+            # if this transition takes food from barn l1, worker from road r1, and sends worker to road r2,
+            # we would get:
+            # E_out = [(r1, self.V_name), (l1, self.V_name), (self.V_name, r2)], 
             E_out = B.out_edges( self.V_name )
-
+            
             for e in E_out:
                 
                 if B.nodes[ e[1] ]["color"] == "Road":
