@@ -387,6 +387,8 @@ class House():
 
 class Pnet():
 
+    lifo = lambda e: B.nodes[ e[0] ]["holdings"][0]
+    life_del = lambda e: B.nodes[ e[0] ]["holdings"][0] =
     @classmethod
     def add_road(cls, node_name, start_workers = 0):
         if start_workers == 0:
@@ -538,10 +540,8 @@ def deterministic(order):
 
     for i in order:
         c0 += 1
-        p0 = [len( B.nodes[i]["holdings"] ) for i in roads_places]
-        #if 0 in p0:
+        p0 = [len( B.nodes[r]["holdings"] ) for r in roads_places]
         if all(v == 0 for v in p0):
-            #all(v == 0 for v in values)
             print(p0)
             print(B.nodes(data=True))
             print(f"simulation ended at {c0} iterations. ")
@@ -576,3 +576,7 @@ def bipart_plot():
     val_map ={node: float(B.nodes[node]["COLOR"]) for node in B.nodes() }    
     values = [val_map.get(node, 0.25) for node in B.nodes()]
     nx.draw_networkx(B, pos = bipartite_layout(B, places), node_color = values, width = 1)
+
+
+simsims_ex()
+stochastic_iteration(2)
