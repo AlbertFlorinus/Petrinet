@@ -519,3 +519,41 @@ def colab_plot_detail():
     nx.draw_networkx_edges(B, pos = nx.kamada_kawai_layout(B), edgelist = common, edge_color="g" ,arrowsize=12)
     nx.draw_networkx_edges(B, pos = nx.kamada_kawai_layout(B), edgelist = leaver_edges, edge_color="b", arrowsize=8)
     nx.draw_networkx_edges(B, pos = nx.kamada_kawai_layout(B), edgelist = comer_edges, edge_color="r", arrowsize=8)
+
+def deterministic(order):
+
+    #helper code to determine whether to end the simulation
+    places = {n for n, d in B.nodes(data=True) if d["bipartite"] == 0}
+
+    roads_places = {i for i in places if B.nodes(data = True)[i]["color"] == "Road"}
+    c0 = 0
+
+    for i in order:
+        c0 += 1
+        p0 = [len( B.nodes[i]["holdings"] ) for i in roads_places]
+        #if 0 in p0:
+        if all(v == 0 for v in p0):
+            #all(v == 0 for v in values)
+            print(p0)
+            print(B.nodes(data=True))
+            print(f"simulation ended at {c0} iterations. ")
+            break
+
+        
+        B.nodes[i]["trans"][0].fire()
+
+def stochastic_iteration(n):
+    #of n iterations
+    orig_state = list(f"{n}: {len(d['holdings'])} " for n, d in B.nodes(data=True) if d["bipartite"] == 0)
+    #takes only the transition nodes, ie bipartite = 1
+    transit_lst = [t for t in B.nodes if B.nodes[t]["bipartite"] == 1]
+    sequence = [random.choice(transit_lst) for i in range(n)]
+    #calls the "deterministic funtion, whats random here is merely the sequence to simulate"
+    deterministic(sequence)
+
+    new_state = list(f"{n}: {len(d['holdings'])} " for n, d in B.nodes(data=True) if d["bipartite"] == 0)
+    print("\n \n --------")
+    print(f"name: amount of tokens")
+
+    for i, j in zip(orig_state, new_state):
+        print(i, "-->", j)
