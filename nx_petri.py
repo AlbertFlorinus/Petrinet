@@ -1,7 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.layout import bipartite_layout
-from networkx.generators.small import house_graph
 import random
 
 global B
