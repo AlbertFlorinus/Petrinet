@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from networkx.drawing.layout import bipartite_layout
 import random
 
+# B is our bipartite graph,
+# since we are always working on this graph and nothing else we make it global, easier with classes
 global B
 B = nx.DiGraph()
 
