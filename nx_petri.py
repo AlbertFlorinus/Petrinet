@@ -557,10 +557,10 @@ def stochastic_iteration(n):
     for i, j in zip(orig_state, new_state):
         print(i, "-->", j)
 
-def colab_simple(G):
-    val_map ={node: float(G.nodes[node]["COLOR"]) for node in G.nodes() }
-    values = [val_map.get(node, 0.25) for node in G.nodes()]
-    nx.draw(G,pos = nx.kamada_kawai_layout(B), arrows=True,cmap=plt.get_cmap("viridis"), node_color = values, with_labels = True)
+def colab_simple():
+    val_map ={node: float(B.nodes[node]["COLOR"]) for node in B.nodes() }
+    values = [val_map.get(node, 0.25) for node in B.nodes()]
+    nx.draw(B,pos = nx.kamada_kawai_layout(B), arrows=True,cmap=plt.get_cmap("viridis"), node_color = values, with_labels = True)
 
 def bipart_plot():
     places = {n for n, d in B.nodes(data=True) if d["bipartite"] == 0}
