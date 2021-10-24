@@ -47,6 +47,10 @@ class Transition():
         self.V_name = V_name
     
     def hard_trigger(self):
+        """
+        general trigger, independent of token type.
+        returns True if all source nodes contains tokens
+        """
         E = B.in_edges( self.V_name )
         p_test = []
 
@@ -266,7 +270,7 @@ class House(Transition):
             for e in E:
 
                 if len(B.nodes[ e[0 ] ]["holdings"]) > 0:
-                    resource = B.nodes[ e[0] ]["holdings"][0]
+                    resource = B.nodes[ e[0] ]["get"](e[0], update = True)
 
                     #color attribute dictates if its a Worker or Food, 
                     #allows nodes to store different classes of people or nutrition, not just Workers() and Food()
@@ -276,9 +280,6 @@ class House(Transition):
 
                     elif B.nodes[ e[0] ]["color"] == "Storage":
                         transfer["P_x"] = resource
-
-                    #pops the resource from the source Node at index 0, Barn and Road both use Que
-                    B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
             
             #increase hp or worker by 20
             transfer["W_x"].change_hp(20)
@@ -290,7 +291,7 @@ class House(Transition):
                 
                 if B.nodes[ e[1] ]["color"] == "Road":
 
-                    B.nodes[ e[1] ]["holdings"].append(transfer["W_x"])
+                    B.nodes[ e[1] ]["get"].add(e[1], transfer["W_x"])
 
         #When there are more than 1 worker available
         elif self.soft_trigger() == False:
@@ -567,3 +568,4 @@ def bipart_plot():
 
 
 simsims_ex()
+stochastic_iteration(5)

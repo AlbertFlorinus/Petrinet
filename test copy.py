@@ -1,37 +1,13 @@
 import networkx as nx
-import random
-
-global B
 B = nx.DiGraph()
+B.add_node("r1")
+B.add_node("r2")
+B.add_node("r4")
+B.add_edge("r1", "r2")
+B.add_edge("r2", "r4")
+B.add_edge("r4", "r1")
+B.add_edge("r4", "r2")
 
-class Worker():
-    def __init__(self):
-        self.hp = random.randint(30,80)
-
-
-class Pnet():
-
-    @classmethod
-    def Stack(cls, e, update = False):
-        resource = B.nodes[e]["holdings"][-1]
-        if update == True:
-            B.nodes[e]["holdings"] = B.nodes[e]["holdings"][:-1]
-
-        return resource
-
-    @classmethod
-    def add_road(cls, node_name, start_workers = 0):
-        x = node_name
-        info = []
-        if start_workers > 0:
-            info = [Worker() for i in range(start_workers)]
-        
-        B.add_node(node_name, holdings = info, color = "Road", get = cls.Stack, COLOR = 1.0, bipartite = 0)
-
-
-
-
-Pnet.add_road("r1", start_workers=2)
-print(B.nodes["r1"]["holdings"])
-
-res = B.nodes["r1"]["get"]
+x = B.in_edges("r2")
+print(type(x))
+print(x)
