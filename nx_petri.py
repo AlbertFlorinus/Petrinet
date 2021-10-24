@@ -120,8 +120,7 @@ class Diner(Transition):
             for e in E:
 
                 #by using the method hard_trigger, we know theres atleast 1 element in holdings.
-                resource = B.nodes[ e[0] ]["holdings"][0]
-                resource = B.nodes[ e[0] ][]
+                resource = B.nodes[ e[0] ]["get"]( e[0], update = True )
                 #color attribute dictates if its a Worker or Food, 
                 #allows nodes to store different classes of people or nutrition, not just Workers() and Food()
 
@@ -130,9 +129,6 @@ class Diner(Transition):
 
                 elif B.nodes[ e[0] ]["color"] == "Barn":
                     transfer["F_x"] = resource
-
-                #pops the resource from the source Node at index 0, Barn and Road both use Que
-                B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
             
             #the workers hp is updated with the foods quality
             transfer["W_x"].eat(transfer["F_x"])
@@ -152,7 +148,7 @@ class Diner(Transition):
                     wait_val = -len( B.nodes[ e[1] ]["holdings"] )
                     transfer["W_x"].change_hp( wait_val )
                     if transfer["W_x"].get_hp() > 0:
-                        B.nodes[ e[1] ]["holdings"].append(transfer["W_x"])
+                        B.nodes[ e[1] ]["add"]( e[1], transfer["W_x"] )
                 
         else:
             print(f"{self.V_name} fizzled")
@@ -162,22 +158,6 @@ class Factory(Transition):
         self.V_name = V_name
         self.accident_scale = random.randint(60, 100)
 
-    def hard_trigger(self):
-        E = B.in_edges( self.V_name )
-        p_test = []
-
-        for e in E:
-
-            if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
-                p_test.append(True)
-            else:
-                p_test.append(False)
-
-        if len(p_test) > 0:
-            return all(p_test)
-        else:
-            return False
-    
     def fire(self):
         
         if self.hard_trigger():
@@ -189,11 +169,9 @@ class Factory(Transition):
             for e in E:
                 
                 resource = B.nodes[ e[0] ]["holdings"][0]
+                resource = B.nodes[ e[0] ]["get"]( e[0], update = True)
                 if B.nodes[ e[0] ]["color"] == "Road":
                     transfer["W_x"] = resource
-                
-                B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
-            
 
             E_out = B.out_edges( self.V_name )
 
@@ -210,10 +188,10 @@ class Factory(Transition):
                     wait_val = -len( B.nodes[ i[1] ]["holdings"] )
                     transfer["W_x"].change_hp(wait_val)
                     if transfer["W_x"].get_hp() > 0:
-                        B.nodes[ i[1] ]["holdings"].append(transfer["W_x"])
+                        B.nodes[ i[1] ]["add"]( i[1], transfer["W_x"])
 
                 elif B.nodes[ i[1] ]["color"] == "Storage":
-                    B.nodes[ i[1] ]["holdings"].append(transfer["P_x"])
+                    B.nodes[ i[1] ]["add"](i[1], transfer["P_x"])
                 
         else:
             print(f"{self.V_name} fizzled")
