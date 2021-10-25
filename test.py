@@ -9,7 +9,9 @@ class Con():
     def update_road(cls, r):
        r.holdings = cls.lifo_del(r) 
     
-
+    @classmethod
+    def move_res(cls, r):
+        
 class Road():
     def __init__(self):
         self.holdings = ["pehder", "abbe", "emma"]
