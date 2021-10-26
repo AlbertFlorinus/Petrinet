@@ -1,3 +1,4 @@
+from itertools import product
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.layout import bipartite_layout
@@ -38,14 +39,18 @@ class Worker():
 class Product():
     def __init__(self):
         self.quality = 50
-    
-class Farm():
+
+
+class Transition():
+
     def __init__(self, V_name):
         self.V_name = V_name
-        #accident_scale being the negative impact on a workers hp should an accident occur
-        self.accident_scale = random.randint(20,40)
-
+    
     def hard_trigger(self):
+        """
+        general trigger, independent of token type.
+        returns True if all source nodes contains tokens
+        """
         E = B.in_edges( self.V_name )
         p_test = []
 
@@ -61,6 +66,12 @@ class Farm():
             return all(p_test)
         else:
             return False
+
+class Farm(Transition):
+    def __init__(self, V_name):
+        super().__init__(V_name)
+        #accident_scale being the negative impact on a workers hp should an accident occur
+        self.accident_scale = random.randint(20,40)
     
     def fire(self):
         
@@ -71,11 +82,10 @@ class Farm():
             transfer = {"W_x": None, "F_x": Food()}
 
             for e in E:
-                resource = B.nodes[ e[0] ]["holdings"][0]
+                resource = B.nodes[ e[0] ]["get"]( e[0], update = True)
+
                 if isinstance(resource, Worker):
                     transfer["W_x"] = resource
-                    #updates the supply node, removing the retrieved worker
-                    B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]            
 
             E_out = B.out_edges( self.V_name )
             if random.randint(1, 12) <= 3:
@@ -86,34 +96,18 @@ class Farm():
 
                 #only send the worker if it has positive hp,
                 if B.nodes[ i[1] ]["color"] == "Road" and transfer["W_x"].get_hp() > 0:
-                    B.nodes[ i[1] ]["holdings"].append(transfer["W_x"])
+                    B.nodes[ i[1] ]["add"](i[1], transfer["W_x"])
 
                 elif B.nodes[ i[1] ]["color"] == "Barn":
                     #send food
-                    B.nodes[ i[1] ]["holdings"].append(transfer["F_x"])
+                    B.nodes[ i[1] ]["add"](i[1], transfer["F_x"])
                 
         else:
             print(f"{self.V_name} fizzled")
 
-class Diner():
+class Diner(Transition):
     def __init__(self, V_name):
-        self.V_name = V_name
-
-    def hard_trigger(self):
-        E = B.in_edges( self.V_name )
-        p_test = []
-
-        for e in E:
-            #print(e, B.nodes[ e[0] ]["holdings"])
-            if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
-                p_test.append(True)
-            else:
-                p_test.append(False)
-
-        if len(p_test) > 0:
-            return all(p_test)
-        else:
-            return False
+        super().__init__(V_name)
     
     def fire(self):
         
@@ -130,8 +124,7 @@ class Diner():
             for e in E:
 
                 #by using the method hard_trigger, we know theres atleast 1 element in holdings.
-                resource = B.nodes[ e[0] ]["holdings"][0]
-
+                resource = B.nodes[ e[0] ]["get"]( e[0], update = True )
                 #color attribute dictates if its a Worker or Food, 
                 #allows nodes to store different classes of people or nutrition, not just Workers() and Food()
 
@@ -140,9 +133,6 @@ class Diner():
 
                 elif B.nodes[ e[0] ]["color"] == "Barn":
                     transfer["F_x"] = resource
-
-                #pops the resource from the source Node at index 0, Barn and Road both use Que
-                B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
             
             #the workers hp is updated with the foods quality
             transfer["W_x"].eat(transfer["F_x"])
@@ -162,32 +152,16 @@ class Diner():
                     wait_val = -len( B.nodes[ e[1] ]["holdings"] )
                     transfer["W_x"].change_hp( wait_val )
                     if transfer["W_x"].get_hp() > 0:
-                        B.nodes[ e[1] ]["holdings"].append(transfer["W_x"])
+                        B.nodes[ e[1] ]["add"]( e[1], transfer["W_x"] )
                 
         else:
             print(f"{self.V_name} fizzled")
 
-class Factory():
+class Factory(Transition):
     def __init__(self, V_name):
-        self.V_name = V_name
+        super().__init__(V_name)
         self.accident_scale = random.randint(60, 100)
 
-    def hard_trigger(self):
-        E = B.in_edges( self.V_name )
-        p_test = []
-
-        for e in E:
-
-            if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
-                p_test.append(True)
-            else:
-                p_test.append(False)
-
-        if len(p_test) > 0:
-            return all(p_test)
-        else:
-            return False
-    
     def fire(self):
         
         if self.hard_trigger():
@@ -197,13 +171,10 @@ class Factory():
             transfer = {"W_x": None, "P_x": Product()}
 
             for e in E:
-                
-                resource = B.nodes[ e[0] ]["holdings"][0]
+
+                resource = B.nodes[ e[0] ]["get"]( e[0], update = True)
                 if B.nodes[ e[0] ]["color"] == "Road":
                     transfer["W_x"] = resource
-                
-                B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
-            
 
             E_out = B.out_edges( self.V_name )
 
@@ -220,15 +191,15 @@ class Factory():
                     wait_val = -len( B.nodes[ i[1] ]["holdings"] )
                     transfer["W_x"].change_hp(wait_val)
                     if transfer["W_x"].get_hp() > 0:
-                        B.nodes[ i[1] ]["holdings"].append(transfer["W_x"])
+                        B.nodes[ i[1] ]["add"]( i[1], transfer["W_x"])
 
                 elif B.nodes[ i[1] ]["color"] == "Storage":
-                    B.nodes[ i[1] ]["holdings"].append(transfer["P_x"])
+                    B.nodes[ i[1] ]["add"](i[1], transfer["P_x"])
                 
         else:
             print(f"{self.V_name} fizzled")
 
-class House():
+class House(Transition):
     def __init__(self, V_name):
         self.V_name = V_name
 
@@ -256,7 +227,6 @@ class House():
 
                     if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
                         for i in range( len ( B.nodes[ e[0] ]["holdings"] ) ):
-
                             worker_check.append(True)
                             
                     else:
@@ -298,7 +268,7 @@ class House():
             for e in E:
 
                 if len(B.nodes[ e[0 ] ]["holdings"]) > 0:
-                    resource = B.nodes[ e[0] ]["holdings"][0]
+                    resource = B.nodes[ e[0] ]["get"](e[0], update = True)
 
                     #color attribute dictates if its a Worker or Food, 
                     #allows nodes to store different classes of people or nutrition, not just Workers() and Food()
@@ -308,9 +278,6 @@ class House():
 
                     elif B.nodes[ e[0] ]["color"] == "Storage":
                         transfer["P_x"] = resource
-
-                    #pops the resource from the source Node at index 0, Barn and Road both use Que
-                    B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
             
             #increase hp or worker by 20
             transfer["W_x"].change_hp(20)
@@ -321,18 +288,15 @@ class House():
             for e in E_out:
                 
                 if B.nodes[ e[1] ]["color"] == "Road":
-
-                    B.nodes[ e[1] ]["holdings"].append(transfer["W_x"])
+                    B.nodes[ e[1] ]["add"](e[1], transfer["W_x"])
 
         #When there are more than 1 worker available
         elif self.soft_trigger() == False:
             print(f"{self.V_name} fizzled")
         
 
-        #self.soft_trigger() > True
+        #self.soft_trigger() > 1
         else:
-
-            assert self.soft_trigger() > True
             
             print(f"{self.V_name} fired with 2 workers")
             E = B.in_edges( self.V_name )
@@ -355,23 +319,18 @@ class House():
                         B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][2:]
 
                     elif B.nodes[ e[0] ]["color"] == "Storage":
-                        transfer["P_x"] = B.nodes[ e[0] ]["holdings"][-1]
-                        #take the product from storage as a stack, ie last element
-                        B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][:-1]
+                        #takes a product and updates the supply nodes holdings
+                        transfer["P_x"] = B.nodes[ e[0] ]["get"](e[0], update = True)
             
             elif single_road != 1:
                 for e in E:
                     if B.nodes[ e[0] ]["color"] == "Road":
 
                         if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
-                            transfer["W_x"].append( B.nodes[ e[0] ]["holdings"][0] )
-
-                            B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
+                            transfer["W_x"].append( B.nodes[e[0]]["get"](e[0], update = True) )
 
                     elif B.nodes[ e[0] ]["color"] == "Storage":
-                        transfer["P_x"] = B.nodes[ e[0] ]["holdings"][-1]
-                        B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][:-1]
-
+                        transfer["P_x"] = B.ndoes[ e[0] ]["get"](e[0], update = True)
             
             #a new worker is created in the house
             transfer["W_x"].append(Worker())
@@ -380,34 +339,55 @@ class House():
 
 
             for e in E_out:
-                
                 if B.nodes[ e[1] ]["color"] == "Road":
                     for worker in transfer["W_x"]:
-                        B.nodes[ e[1] ]["holdings"].append(worker)
+                        B.nodes[ e[1] ]["add"](e[1], worker)
 
 class Pnet():
 
     @classmethod
-    def add_road(cls, node_name, start_workers = 0):
-        if start_workers == 0:
-            B.add_node(node_name, holdings = [], color = "Road", COLOR = 1.0, bipartite = 0)
+    def Lifo_pull(cls, e, update = False):
+        resource = B.nodes[e]["holdings"][0]
+        if update == True:
+            B.nodes[e]["holdings"] = B.nodes[e]["holdings"][1:]
 
-        else:
-            B.add_node(node_name, holdings = [Worker() for i in range(start_workers)], color = "Road", COLOR = 1.0, bipartite = 0)
+        return resource
+
+    @classmethod
+    def Push(cls, e, resource):
+        B.nodes[e]["holdings"].append(resource)
     
     @classmethod
+    def Stack_pull(cls, e, update = False):
+        resource = B.nodes[e]["holdings"][-1]
+        if update == True:
+            B.nodes[e]["holdings"] = B.nodes[e]["holdings"][:-1]
+
+        return resource
+    
+    @classmethod
+    def add_road(cls, node_name, start_workers = 0):
+        info = []
+        if start_workers > 0:
+            info = [Worker() for i in range(start_workers)]
+        
+        B.add_node(node_name, holdings = info, get = cls.Lifo_pull, add = cls.Push, color = "Road", COLOR = 1.0, bipartite = 0)
+
+    @classmethod
     def add_barn(cls, node_name, start_food = 0):
-        if start_food == 0:
-            B.add_node(node_name, holdings = [], color = "Barn", COLOR = 0.6, bipartite = 0)
-        else:
-            B.add_node(node_name, holdings = [Food() for i in range(start_food)], color = "Barn", COLOR = 0.6, bipartite = 0)
+        info = []
+        if start_food > 0:
+            info = [Food() for i in range(start_food)]
+        
+        B.add_node(node_name, holdings = info, get = cls.Lifo_pull, add = cls.Push, color = "Barn", COLOR = 0.6, bipartite = 0)
 
     @classmethod
     def add_storage(cls, node_name, start_products = 0):
-        if start_products == 0:
-            B.add_node(node_name, holdings = [], color = "Storage", COLOR = 0.4, bipartite = 0)
-        else:
-            B.add_node(node_name, holdings = [Product() for i in range(start_products)], color = "Storage", COLOR = 0.4, bipartite = 0)
+        info = []
+        if start_products > 0:
+            info = [Product() for i in range(start_products)]
+        
+        B.add_node(node_name, holdings = info, get = cls.Stack_pull, add = cls.Push, color = "Storage", COLOR = 0.4, bipartite = 0)
 
     @classmethod
     def add_farm(cls, node_name):
@@ -538,10 +518,8 @@ def deterministic(order):
 
     for i in order:
         c0 += 1
-        p0 = [len( B.nodes[i]["holdings"] ) for i in roads_places]
-        #if 0 in p0:
+        p0 = [len( B.nodes[r]["holdings"] ) for r in roads_places]
         if all(v == 0 for v in p0):
-            #all(v == 0 for v in values)
             print(p0)
             print(B.nodes(data=True))
             print(f"simulation ended at {c0} iterations. ")
