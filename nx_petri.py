@@ -298,10 +298,8 @@ class House(Transition):
             print(f"{self.V_name} fizzled")
         
 
-        #self.soft_trigger() > True
+        #self.soft_trigger() > 1
         else:
-
-            assert self.soft_trigger() > True
             
             print(f"{self.V_name} fired with 2 workers")
             E = B.in_edges( self.V_name )
