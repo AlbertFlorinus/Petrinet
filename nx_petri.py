@@ -159,7 +159,7 @@ class Diner(Transition):
 
 class Factory(Transition):
     def __init__(self, V_name):
-        self.V_name = V_name
+        super().__init__(V_name)
         self.accident_scale = random.randint(60, 100)
 
     def fire(self):
@@ -171,8 +171,7 @@ class Factory(Transition):
             transfer = {"W_x": None, "P_x": Product()}
 
             for e in E:
-                
-                resource = B.nodes[ e[0] ]["holdings"][0]
+
                 resource = B.nodes[ e[0] ]["get"]( e[0], update = True)
                 if B.nodes[ e[0] ]["color"] == "Road":
                     transfer["W_x"] = resource
@@ -228,7 +227,6 @@ class House(Transition):
 
                     if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
                         for i in range( len ( B.nodes[ e[0] ]["holdings"] ) ):
-
                             worker_check.append(True)
                             
                     else:
@@ -290,8 +288,7 @@ class House(Transition):
             for e in E_out:
                 
                 if B.nodes[ e[1] ]["color"] == "Road":
-
-                    B.nodes[ e[1] ]["get"].add(e[1], transfer["W_x"])
+                    B.nodes[ e[1] ]["add"](e[1], transfer["W_x"])
 
         #When there are more than 1 worker available
         elif self.soft_trigger() == False:
@@ -322,23 +319,18 @@ class House(Transition):
                         B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][2:]
 
                     elif B.nodes[ e[0] ]["color"] == "Storage":
-                        transfer["P_x"] = B.nodes[ e[0] ]["holdings"][-1]
-                        #take the product from storage as a stack, ie last element
-                        B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][:-1]
+                        #takes a product and updates the supply nodes holdings
+                        transfer["P_x"] = B.nodes[ e[0] ]["get"](e[0], update = True)
             
             elif single_road != 1:
                 for e in E:
                     if B.nodes[ e[0] ]["color"] == "Road":
 
                         if len ( B.nodes[ e[0] ]["holdings"] ) > 0:
-                            transfer["W_x"].append( B.nodes[ e[0] ]["holdings"][0] )
-
-                            B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][1:]
+                            transfer["W_x"].append( B.nodes[e[0]]["get"](e[0], update = True) )
 
                     elif B.nodes[ e[0] ]["color"] == "Storage":
-                        transfer["P_x"] = B.nodes[ e[0] ]["holdings"][-1]
-                        B.nodes[ e[0] ]["holdings"] = B.nodes[ e[0] ]["holdings"][:-1]
-
+                        transfer["P_x"] = B.ndoes[ e[0] ]["get"](e[0], update = True)
             
             #a new worker is created in the house
             transfer["W_x"].append(Worker())
@@ -347,10 +339,9 @@ class House(Transition):
 
 
             for e in E_out:
-                
                 if B.nodes[ e[1] ]["color"] == "Road":
                     for worker in transfer["W_x"]:
-                        B.nodes[ e[1] ]["holdings"].append(worker)
+                        B.nodes[ e[1] ]["add"](e[1], worker)
 
 class Pnet():
 
@@ -563,7 +554,3 @@ def bipart_plot():
     val_map ={node: float(B.nodes[node]["COLOR"]) for node in B.nodes() }    
     values = [val_map.get(node, 0.25) for node in B.nodes()]
     nx.draw_networkx(B, pos = bipartite_layout(B, places), node_color = values, width = 1)
-
-
-simsims_ex()
-stochastic_iteration(5)
